@@ -6,7 +6,7 @@ import 'hardhat/console.sol';
 
 contract TipJar {
   uint256 public totalTips;
-  address payable owner;
+  address payable public owner;
 
   struct Tip {
     address sender;
@@ -19,7 +19,7 @@ contract TipJar {
   Tip[] tips;
 
   event NewTip(address indexed from, string message, string name, uint256 amount);
-  event NewWithdraw(uint256 amount);
+  event NewWithdrawl(uint256 amount);
 
   constructor() {
     owner = payable(msg.sender);
@@ -47,6 +47,6 @@ contract TipJar {
     require(amount > 0, "You have no ehter to withdraw");
     (bool success, ) = owner.call{value: amount}("");
     require(success, "Transfer failed");
-    emit NewWithdraw(amount);
+    emit NewWithdrawl(amount);
   }
 }

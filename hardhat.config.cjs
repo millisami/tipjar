@@ -1,4 +1,5 @@
 require('@nomiclabs/hardhat-waffle')
+require('dotenv').config()
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -10,6 +11,10 @@ module.exports = {
 	networks: {
 		hardhat: {
 			chainId: 1337
+		},
+		goerli: {
+			url: process.env.ALCHEMY_URL,
+			accounts: [process.env.PRIVATE_KEY]
 		}
 	}
 }

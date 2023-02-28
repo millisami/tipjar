@@ -1,58 +1,32 @@
 <script>
 	import { onMount } from 'svelte'
 	import { ethers, providers } from 'ethers'
-	import TipJarABI from '../artifacts/src/contracts/TipJar.sol/TipJar.json'
-	import { each } from 'svelte/internal'
+	import TipJarABI from '../../artifacts/src/contracts/TipJar.sol/TipJar.json'
+	import { each, not_equal } from 'svelte/internal'
 
 	let userAddress = null
 	let network = null
 	let balance = null
+	let contractBalance = null
 	let isConnected = false
 	let provider = null
 
 	const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS
+	let amITheOwner = false
+
 	let contract = null
 	let allTips = []
-	let sendingTip = false
+	let isWithdrawing = false
 
 	async function setupContract() {
 		if (isConnected) {
 			contract = new ethers.Contract(contractAddress, TipJarABI.abi, provider)
-			contract.on('NewTip', async () => {
+			const contractOwner = await contract.owner()
+			amITheOwner = ethers.utils.getAddress(contractOwner) === ethers.utils.getAddress(userAddress)
+			contract.on('NewWithdrawl', async () => {
+				contractBalance = await provider.getBalance(contractAddress)
 				balance = await provider.getBalance(userAddress)
-
-				// Update the table
-				await getAllTips()
-				sendingTip = false
-			})
-		}
-	}
-
-	async function sendTip(event) {
-		sendingTip = true
-		const formData = new FormData(event.target)
-		const data = {}
-		for (let field of formData) {
-			const [key, value] = field
-			data[key] = value
-		}
-
-		const rwContract = new ethers.Contract(contractAddress, TipJarABI.abi, provider.getSigner())
-		const tx = await rwContract.sendTip(data.message, data.name, {
-			value: ethers.utils.parseEther(data.amount)
-		})
-		await tx.wait()
-	}
-
-	async function getAllTips() {
-		if (isConnected) {
-			const tips = await contract.getAllTips()
-			allTips = tips.map((item) => {
-				return {
-					...item,
-					timestamp: new Date(item.timestamp * 1000).toLocaleDateString(),
-					amount: ethers.utils.parseEther(item.amount.toString())
-				}
+				isWithdrawing = false
 			})
 		}
 	}
@@ -63,6 +37,7 @@
 			provider = new ethers.providers.Web3Provider(window.ethereum)
 			network = await provider.getNetwork()
 			balance = await provider.getBalance(userAddress)
+			contractBalance = await provider.getBalance(contractAddress)
 			isConnected = true
 			setupContract()
 		} catch (error) {
@@ -90,41 +65,43 @@
 			}
 		}
 	})
+
+	async function withdraw() {
+		if (isConnected) {
+			isWithdrawing = true
+			const rwContract = new ethers.Contract(contractAddress, TipJarABI.abi, provider.getSigner())
+			const tx = await rwContract.withdraw()
+			await tx.wait()
+		}
+	}
 </script>
 
 {#if isConnected}
-	<p class="text-xl text-green-600">
-		Successfully connected with account <strong>{userAddress}</strong>
-	</p>
-	<ul>
-		<li>Current network: {network.name}</li>
-		<li>Current balance: {ethers.utils.formatEther(balance)}</li>
-	</ul>
+	<h1 class="text-3xl text-gray-800 p-8">Withdraw from the TipJar contract</h1>
+	<div class="text-sm text-gray-500 pb-4 flex flex-col gap-4">
+		<p class="text-xl text-green-600">
+			Successfully connected with account <strong>{userAddress}</strong>
+		</p>
+		<ul>
+			<li>Current network: {network.name}</li>
+			<li>Current balance: {ethers.utils.formatEther(balance)}</li>
+			<li>Current contract balance: {ethers.utils.formatEther(contractBalance)}</li>
+		</ul>
+		{#if amITheOwner}
+			{#if contractBalance.eq(0)}
+				<p class="text-xl text-red-500">There is no balance to withdraw</p>
+			{/if}
+			<button
+				class="bg-blue-600 text-gray-50 shadow-md rounded-md px-3 py-8 text-center disabled:opacity-25"
+				on:click={withdraw}
+				disabled={isWithdrawing || contractBalance.eq(0)}
+				>{isWithdrawing ? 'Withdrawing...' : 'Withdraw'}</button
+			>
+		{:else}
+			<p class="text-xl text-red-500">Only the owner of the contract can withdraw the balance</p>
+		{/if}
+	</div>
 
-	<form
-		class="w-2/3 mx-auto border rounded-md border-indigo-200 flex flex-col gap-8 p-6 mt-4"
-		on:submit|preventDefault={sendTip}
-	>
-		<div class="grid grid-cols-2">
-			<label for="amount">Send me an ETH tip!</label>
-			<input name="amount" placeholder="0.001" />
-		</div>
-		<div class="grid grid-cols-2">
-			<label for="name">Your Name</label>
-			<input name="name" placeholder="Your name" />
-		</div>
-		<div class="grid grid-cols-2">
-			<label for="message">Your Message</label>
-			<input name="message" />
-		</div>
-		<button
-			disabled={sendingTip}
-			type="submit"
-			class="bg-green-500 text-gray-50 shadow-md rounded-md px-2 py-2 text-center w-1/3"
-		>
-			Send a Tip!
-		</button>
-	</form>
 	<table class="mt-8 border-collapse table-auto w-2/3 mx-auto text-sm h-80 overflow-auto">
 		<thead>
 			<tr>
@@ -148,7 +125,7 @@
 		<tbody>
 			{#each allTips as item}
 				<tr>
-					<td class="border-b border-gray-700  p-4 text-gray-500">{item.sender}</td>
+					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.sender}</td>
 					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.name}</td>
 					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.message}</td>
 					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.timestamp}</td>
