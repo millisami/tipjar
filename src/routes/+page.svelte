@@ -3,6 +3,7 @@
 	import { ethers, providers } from 'ethers'
 	import TipJarABI from '../artifacts/src/contracts/TipJar.sol/TipJar.json'
 	import { each } from 'svelte/internal'
+	import { focusTrap } from '@skeletonlabs/skeleton'
 
 	let userAddress = null
 	let network = null
@@ -14,6 +15,7 @@
 	let contract = null
 	let allTips = []
 	let sendingTip = false
+	let isFocused = true
 
 	async function setupContract() {
 		if (isConnected) {
@@ -104,64 +106,55 @@
 	<form
 		class="w-2/3 mx-auto border rounded-md border-indigo-200 flex flex-col gap-8 p-6 mt-4"
 		on:submit|preventDefault={sendTip}
+		use:focusTrap={isFocused}
 	>
 		<div class="grid grid-cols-2">
-			<label for="amount">Send me an ETH tip!</label>
-			<input name="amount" placeholder="0.001" />
+			<label for="amount" class="label">Send me an ETH tip!</label>
+			<input type="text" name="amount" required class="input" placeholder="0.001" />
 		</div>
 		<div class="grid grid-cols-2">
 			<label for="name">Your Name</label>
-			<input name="name" placeholder="Your name" />
+			<input type="text" name="name" required class="input" placeholder="Your name" />
 		</div>
 		<div class="grid grid-cols-2">
 			<label for="message">Your Message</label>
-			<input name="message" />
+			<input type="text" name="message" required class="input" />
 		</div>
-		<button
-			disabled={sendingTip}
-			type="submit"
-			class="bg-green-500 text-gray-50 shadow-md rounded-md px-2 py-2 text-center w-1/3"
-		>
-			Send a Tip!
-		</button>
+		<div class="flex justify-center">
+			<button disabled={sendingTip} type="submit" class="btn variant-filled-primary w-2/3"
+				>{sendingTip ? 'Sending Tip...' : 'Send a Tip!'}</button
+			>
+		</div>
 	</form>
-	<table class="mt-8 border-collapse table-auto w-2/3 mx-auto text-sm h-80 overflow-auto">
-		<thead>
-			<tr>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Sender Address</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Name</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Message</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Timestamp</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Amount</th
-				>
-			</tr>
-		</thead>
-		<tbody>
-			{#each allTips as item}
+
+	<div class="table-container">
+		<table class="table table-hover table-comfortable">
+			<thead>
 				<tr>
-					<td class="border-b border-gray-700  p-4 text-gray-500">{item.sender}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.name}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.message}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.timestamp}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.amount}</td>
+					<th>Sender Address</th>
+					<th>Name</th>
+					<th class="table-cell-fit">Message</th>
+					<th>Timestamp</th>
+					<th>Amount</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{#each allTips as item}
+					<tr>
+						<td>{item.sender}</td>
+						<td>{item.name}</td>
+						<td class="table-cell-fit">{item.message}</td>
+						<td>{item.timestamp}</td>
+						<td>{item.amount}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {:else}
-	<button
-		class="bg-blue-600 text-gray-50 shadow-md rounded-md px-3 py-8 text-center"
-		on:click={connectWallet}
-	>
-		Connect with Wallet
-	</button>
+	<div class="grid place-content-center h-96">
+		<button class="btn variant-filled-primary" on:click={connectWallet}>
+			Connect with Wallet
+		</button>
+	</div>
 {/if}

@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html, body { @apply h-full overflow-hidden; }
+
+:root {
+  --theme-rounded-container: theme(borderRadius.lg);
+  --theme-rounded-base: theme(borderRadius.lg)
+}

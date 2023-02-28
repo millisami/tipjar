@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte'
 	import { ethers, providers } from 'ethers'
 	import TipJarABI from '../../artifacts/src/contracts/TipJar.sol/TipJar.json'
-	import { each, not_equal } from 'svelte/internal'
 
 	let userAddress = null
 	let network = null
@@ -92,53 +91,17 @@
 				<p class="text-xl text-red-500">There is no balance to withdraw</p>
 			{/if}
 			<button
-				class="bg-blue-600 text-gray-50 shadow-md rounded-md px-3 py-8 text-center disabled:opacity-25"
+				class="btn variant-filled-primary w-3/12"
 				on:click={withdraw}
 				disabled={isWithdrawing || contractBalance.eq(0)}
 				>{isWithdrawing ? 'Withdrawing...' : 'Withdraw'}</button
 			>
 		{:else}
-			<p class="text-xl text-red-500">Only the owner of the contract can withdraw the balance</p>
+			<p class="variant-filled-error rounded-md px-3 py-2">
+				Only the owner of the contract can withdraw the balance
+			</p>
 		{/if}
 	</div>
-
-	<table class="mt-8 border-collapse table-auto w-2/3 mx-auto text-sm h-80 overflow-auto">
-		<thead>
-			<tr>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Sender Address</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Name</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Message</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Timestamp</th
-				>
-				<th class="border-b border-gray-600 font-medium p-4 pl-8 pt-0 pb-3 text-gray-400 text-left"
-					>Amount</th
-				>
-			</tr>
-		</thead>
-		<tbody>
-			{#each allTips as item}
-				<tr>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.sender}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.name}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.message}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.timestamp}</td>
-					<td class="border-b border-gray-700  p-4 pl-8 text-gray-500">{item.amount}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
 {:else}
-	<button
-		class="bg-blue-600 text-gray-50 shadow-md rounded-md px-3 py-8 text-center"
-		on:click={connectWallet}
-	>
-		Connect with Wallet
-	</button>
+	<button class="btn variant-filled-primary" on:click={connectWallet}> Connect with Wallet </button>
 {/if}
